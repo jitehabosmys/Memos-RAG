@@ -1,0 +1,26 @@
+# === Core Security & Secrets ===
+.env
+.env.*
+!*.example
+
+# === Python & Dependency Management ===
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+
+# === Data & Arti
+facts (Private) ===
+# 忽略整个 data 目录，因为它包含私人数据库 memos.db 和生成的向量库
+data/
+
+
+# === Logs & Temp ===
+*.log
+tmp/
+to_ignore/
+
+# === IDE & OS ===
+.vscode/
+.idea/
+.DS_Store
