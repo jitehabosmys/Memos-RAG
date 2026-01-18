@@ -8,7 +8,8 @@ from langchain_chroma import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
 from etl import fetch_all_memos, process_documents
 
-PERSIST_DIRECTORY = "./data/chroma_db"
+# 设定数据持久化路径
+PERSIST_DIRECTORY = os.getenv("CHROMA_DB_PATH", "./data/chroma_db")
 EMBEDDING_MODEL_NAME = "BAAI/bge-small-zh-v1.5"
 
 def ingest_data():

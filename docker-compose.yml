@@ -1,0 +1,27 @@
+services:
+  memos-rag:
+    build: .
+    container_name: memos-rag
+    restart: unless-stopped
+    ports:
+      - "8501:8501" # 访问这个端口打开网页
+    volumes:
+      # === 数据库挂载 (这是核心) ===
+      # 左边: 你服务器上 Memos 的真实数据文件路径
+      # 右边: 容器内的路径 (不要改)
+      # :ro 代表 Read-Only (只读)，防止 RAG 误删你的笔记，安全第一
+      - /home/sytssmys/.memos/memos_prod.db:/data/memos.db:ro
+      
+      # === 向量库持久化 ===
+      # 把生成的向量存到当前目录下的 chroma_data 文件夹
+      - ./chroma_data:/data/chroma_db
+      
+    environment:
+      # 告诉程序去哪里读数据库
+      - MEMOS_DB_PATH=/data/memos.db
+      - CHROMA_DB_PATH=/data/chroma_db
+      
+      # API 配置 (必填)
+      - OPENAI_API_KEY=${OPENAI_API_KEY} # 会读取你系统环境变量
+      - OPENAI_API_BASE=https://open.bigmodel.cn/api/paas/v4/
+      - OPENAI_MODEL_NAME=glm-4.6

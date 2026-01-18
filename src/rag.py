@@ -13,7 +13,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 
 # 配置路径
-PERSIST_DIRECTORY = "./data/chroma_db"
+PERSIST_DIRECTORY = os.getenv("CHROMA_DB_PATH", "./data/chroma_db")
 EMBEDDING_MODEL_NAME = "BAAI/bge-small-zh-v1.5"
 
 def format_docs(docs):

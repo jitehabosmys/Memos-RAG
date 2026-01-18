@@ -7,7 +7,7 @@ from typing import List, Dict, Any
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-DB_PATH = Path("data/memos.db")
+DB_PATH = Path(os.getenv("MEMOS_DB_PATH", "data/memos.db"))
 
 def clean_text(text: str) -> str:
     """
