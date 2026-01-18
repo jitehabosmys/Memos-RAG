@@ -26,7 +26,7 @@ RUN chmod +x docker-entrypoint.sh
 ENV MEMOS_DB_PATH=/data/memos.db
 ENV CHROMA_DB_PATH=/data/chroma_db
 ENV OPENAI_API_BASE=https://api.deepseek.com/v1
-ENV OPENAI_MODEL_NAME=deepseek-chat
+ENV OPENAI_MODEL_NAME=glm-4.6
 
 # 暴露端口
 EXPOSE 8000

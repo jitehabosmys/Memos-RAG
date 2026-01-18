@@ -29,8 +29,17 @@ def get_rag_chain():
     """初始化并返回 RAG 处理链"""
     print("🧠 Initializing Second Brain Core...")
 
-    # 强制离线模式
-    os.environ["HF_HUB_OFFLINE"] = "1"
+    # 智能离线模式控制
+    try:
+        from huggingface_hub import scan_cache_dir
+        cache_info = scan_cache_dir()
+        model_cached = any(EMBEDDING_MODEL_NAME in str(repo.repo_id) for repo in cache_info.repos)
+        if model_cached:
+            os.environ["HF_HUB_OFFLINE"] = "1"
+        else:
+            os.environ["HF_HUB_OFFLINE"] = "0"
+    except:
+        os.environ["HF_HUB_OFFLINE"] = "0"
 
     # 1. 加载 Embedding (用于检索)
     embeddings = HuggingFaceEmbeddings(
@@ -52,7 +61,7 @@ def get_rag_chain():
 
     # 3. 初始化 LLM
     llm = ChatOpenAI(
-        model=os.getenv("OPENAI_MODEL_NAME", "deepseek-chat"),
+        model=os.getenv("OPENAI_MODEL_NAME", "glm-4.6"),
         temperature=0.3,
         streaming=True
     )

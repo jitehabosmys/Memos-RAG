@@ -27,8 +27,22 @@ def ingest_data():
     # 2. 加载环境
     print(f"🧠 Loading embedding model...")
     
-    # 设置环境变量，强制尽量使用本地缓存，减少联网检查
-    os.environ["HF_HUB_OFFLINE"] = "1" 
+    # 智能离线模式控制
+    try:
+        from huggingface_hub import scan_cache_dir
+        cache_info = scan_cache_dir()
+        # 模糊匹配：只要缓存里包含模型名称的一部分，就认为存在
+        model_cached = any(EMBEDDING_MODEL_NAME in str(repo.repo_id) for repo in cache_info.repos)
+        
+        if model_cached:
+            print(f"✅ Model found locally. Offline Mode ENABLED.")
+            os.environ["HF_HUB_OFFLINE"] = "1"
+        else:
+            print(f"🌐 Model not found. Online Mode ENABLED for download...")
+            os.environ["HF_HUB_OFFLINE"] = "0"
+    except Exception:
+        # 如果检测失败，默认开启下载，防止报错
+        os.environ["HF_HUB_OFFLINE"] = "0"
 
     embeddings = HuggingFaceEmbeddings(
         model_name=EMBEDDING_MODEL_NAME,
