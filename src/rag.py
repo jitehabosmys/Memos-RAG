@@ -25,25 +25,21 @@ def format_docs(docs):
         formatted.append(f"[日期: {date}]\n{content}")
     return "\n\n---\n\n".join(formatted)
 
-def main():
-    # 1. 检查 API Key
-    if not os.getenv("OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY") == "sk-...":
-        print("⚠️  Warning: OPENAI_API_KEY not set in .env file.")
-        print("   Please edit .env and add your DeepSeek/OpenAI key, or configure Ollama.")
-    
-    print("🧠 Initializing Second Brain...")
-    
+def get_rag_chain():
+    """初始化并返回 RAG 处理链"""
+    print("🧠 Initializing Second Brain Core...")
+
     # 强制离线模式
     os.environ["HF_HUB_OFFLINE"] = "1"
 
-    # 2. 加载 Embedding (用于检索)
+    # 1. 加载 Embedding (用于检索)
     embeddings = HuggingFaceEmbeddings(
         model_name=EMBEDDING_MODEL_NAME,
-        model_kwargs={'device': 'cuda'},
+        model_kwargs={'device': 'cpu'},
         encode_kwargs={'normalize_embeddings': True}
     )
 
-    # 3. 加载 Vector Store
+    # 2. 加载 Vector Store
     vector_db = Chroma(
         persist_directory=PERSIST_DIRECTORY,
         embedding_function=embeddings,
@@ -54,14 +50,14 @@ def main():
     # search_kwargs{"k": 5} 表示每次检索前 5 条相关笔记
     retriever = vector_db.as_retriever(search_kwargs={"k": 5})
 
-    # 4. 初始化 LLM
+    # 3. 初始化 LLM
     llm = ChatOpenAI(
         model=os.getenv("OPENAI_MODEL_NAME", "deepseek-chat"),
-        temperature=0.3, # 低温度，保持严谨
+        temperature=0.3,
         streaming=True
     )
 
-    # 5. 定义 Prompt
+    # 4. 定义 Prompt
     template = """你是一个基于我的 Memos 笔记构建的【个人第二大脑】。
     
     请根据以下【相关的笔记片段】来回答我的问题。
@@ -79,18 +75,28 @@ def main():
     
     prompt = ChatPromptTemplate.from_template(template)
 
-    # 6. 构建 RAG 链 (LCEL)
+    # 5. 构建 RAG 链 (LCEL)
     rag_chain = (
         {"context": retriever | format_docs, "question": RunnablePassthrough()}
         | prompt
         | llm
         | StrOutputParser()
     )
+    
+    return rag_chain
+
+def main():
+    # 1. 检查 API Key
+    if not os.getenv("OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY") == "sk-...":
+        print("⚠️  Warning: OPENAI_API_KEY not set in .env file.")
+    
+    # 2. 获取处理链
+    rag_chain = get_rag_chain()
 
     print("✅ System Ready! (Type 'exit' to quit)")
     print("-" * 50)
 
-    # 7. 聊天循环
+    # 3. 聊天循环
     while True:
         try:
             user_input = input("\n🧑 You: ")

@@ -31,7 +31,7 @@ def ingest_data():
 
     embeddings = HuggingFaceEmbeddings(
         model_name=EMBEDDING_MODEL_NAME,
-        model_kwargs={'device': 'cuda'},
+        model_kwargs={'device': 'cpu'},
         encode_kwargs={'normalize_embeddings': True}
     )
 
