@@ -12,8 +12,12 @@ RUN pip install uv
 COPY pyproject.toml uv.lock ./
 
 # 安装依赖
-# --system: 安装到系统 Python 环境，不创建 .venv
-RUN uv sync --frozen --no-dev --system
+# 1. --no-install-project: 只安装依赖，不安装当前项目(因为 src 还没拷进来)
+# 2. 去掉 --system: uv sync 默认创建 .venv
+RUN uv sync --frozen --no-dev --no-install-project
+
+# 【关键】把 .venv 加入 PATH，这样后续命令就能找到 uvicorn/streamlit
+ENV PATH="/app/.venv/bin:$PATH"
 
 # 拷贝代码
 COPY src ./src
