@@ -7,18 +7,16 @@ services:
       - "8501:8501" # 访问这个端口打开网页
     volumes:
       # === 数据库挂载 (这是核心) ===
-      # 左边: 你服务器上 Memos 的真实数据文件路径
-      # 右边: 容器内的路径 (不要改)
-      # :ro 代表 Read-Only (只读)，防止 RAG 误删你的笔记，安全第一
-      - /home/sytssmys/.memos/memos_prod.db:/data/memos.db:ro
+      # 改为挂载整个目录，以支持 SQLite WAL 模式 (需要同时读取 .db, .wal, .shm)
+      - /home/sytssmys/.memos:/data/memos_folder:ro
       
       # === 向量库持久化 ===
-      # 把生成的向量存到当前目录下的 chroma_data 文件夹
-      - ./chroma_data:/data/chroma_db
+      # 把生成的向量存到 data 目录下的 chroma_db 文件夹 (已在 .gitignore 中忽略)
+      - ./data/chroma_db:/data/chroma_db
       
     environment:
       # 告诉程序去哪里读数据库
-      - MEMOS_DB_PATH=/data/memos.db
+      - MEMOS_DB_PATH=/data/memos_folder/memos.db
       - CHROMA_DB_PATH=/data/chroma_db
       
       # API 配置 (必填)
