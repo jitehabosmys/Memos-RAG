@@ -16,7 +16,7 @@ services:
       
     environment:
       # 告诉程序去哪里读数据库
-      - MEMOS_DB_PATH=/data/memos_folder/memos.db
+      - MEMOS_DB_PATH=/data/memos_folder/memos_prod.db
       - CHROMA_DB_PATH=/data/chroma_db
       
       # API 配置 (必填)
