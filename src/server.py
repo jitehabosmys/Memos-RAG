@@ -21,6 +21,7 @@ class QueryRequest(BaseModel):
 
 # --- 全局变量 ---
 rag_chain = None
+is_refreshing = False  # 🔒 全局锁，防止并发更新
 
 @app.on_event("startup")
 async def startup_event():
@@ -43,7 +44,12 @@ def read_root():
 @app.post("/refresh")
 async def refresh_knowledge_base():
     """触发知识库更新 (ETL + Ingest)"""
-    global rag_chain
+    global rag_chain, is_refreshing
+    
+    if is_refreshing:
+        raise HTTPException(status_code=429, detail="⚠️ Update already in progress. Please wait.")
+    
+    is_refreshing = True
     try:
         print("🔄 Refresh request received. Starting ingestion...")
         # 1. 执行 ETL 和 向量化
@@ -57,6 +63,9 @@ async def refresh_knowledge_base():
     except Exception as e:
         print(f"❌ Refresh failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        # 无论成功失败，一定要释放锁
+        is_refreshing = False
 
 @app.post("/chat")
 async def chat_endpoint(request: QueryRequest):
