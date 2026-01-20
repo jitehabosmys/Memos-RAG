@@ -21,5 +21,5 @@ services:
       
       # API 配置 (必填)
       - OPENAI_API_KEY=${OPENAI_API_KEY} # 会读取你系统环境变量
-      - OPENAI_API_BASE=https://open.bigmodel.cn/api/paas/v4/
-      - OPENAI_MODEL_NAME=glm-4.6
+      - OPENAI_API_BASE=${OPENAI_API_BASE}
+      - OPENAI_MODEL_NAME=OPENAI_MODEL_NAME=${OPENAI_MODEL_NAME}
