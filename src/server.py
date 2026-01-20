@@ -9,6 +9,7 @@ import asyncio
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from rag import get_rag_chain
+from ingest import ingest_data
 
 load_dotenv()
 
@@ -38,6 +39,24 @@ async def startup_event():
 @app.get("/")
 def read_root():
     return {"status": "ok", "message": "Memos RAG Brain is Online"}
+
+@app.post("/refresh")
+async def refresh_knowledge_base():
+    """触发知识库更新 (ETL + Ingest)"""
+    global rag_chain
+    try:
+        print("🔄 Refresh request received. Starting ingestion...")
+        # 1. 执行 ETL 和 向量化
+        await asyncio.to_thread(ingest_data)
+        
+        # 2. 重新加载 RAG Chain
+        print("♻️ Reloading RAG Chain...")
+        rag_chain = get_rag_chain()
+        
+        return {"status": "success", "message": "Knowledge base updated and reloaded!"}
+    except Exception as e:
+        print(f"❌ Refresh failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/chat")
 async def chat_endpoint(request: QueryRequest):

@@ -19,7 +19,7 @@ with st.sidebar:
     st.markdown("---")
     st.info("基于你的 Memos 笔记构建的智能问答系统。")
     
-    if st.button("🔄 刷新系统状态"):
+    if st.button("🔄 检查后端状态"):
         try:
             response = httpx.get(f"{API_URL}/")
             if response.status_code == 200:
@@ -28,6 +28,18 @@ with st.sidebar:
                 st.error("后端异常")
         except:
             st.error("无法连接到后端")
+
+    if st.button("⚡ 刷新知识库"):
+        with st.spinner("正在同步 Memos 并重建索引..."):
+            try:
+                # 设置较长的超时时间，因为 embedding 可能需要几秒钟
+                response = httpx.post(f"{API_URL}/refresh", timeout=60.0)
+                if response.status_code == 200:
+                    st.success("✅ " + response.json().get("message", "更新成功"))
+                else:
+                    st.error(f"❌ 更新失败: {response.status_code}")
+            except Exception as e:
+                st.error(f"❌ 请求出错: {e}")
 
     st.markdown("---")
     st.caption("Powered by LangChain + FastAPI + Streamlit")
