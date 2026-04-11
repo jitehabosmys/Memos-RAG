@@ -1,12 +1,11 @@
 import sys
 import os
-from pathlib import Path
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from langchain_chroma import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
-from etl import fetch_all_memos, process_documents
+from etl import DB_PATH, fetch_all_memos, process_documents
 
 # 设定数据持久化路径
 PERSIST_DIRECTORY = os.getenv("CHROMA_DB_PATH", "./data/chroma_db")
@@ -16,13 +15,17 @@ def ingest_data():
     print("🚀 Starting SMART ingestion pipeline...")
     
     # 1. 准备数据
+    if not DB_PATH.exists():
+        print(f"❌ Source database not found: {DB_PATH}. Sync aborted to avoid deleting valid index data.")
+        return
+
     memos = fetch_all_memos()
     if not memos:
-        print("⚠️ No memos found.")
-        return
+        print("⚠️ No valid memos found in source DB. Will remove stale chunks from vector store if needed.")
     
     new_chunks = process_documents(memos)
     new_ids = [chunk.id for chunk in new_chunks]
+    chunk_by_id = {chunk.id: chunk for chunk in new_chunks}
     
     # 2. 加载环境
     print(f"🧠 Loading embedding model...")
@@ -64,6 +67,10 @@ def ingest_data():
 
     to_add = incoming_ids - existing_ids
     to_update = incoming_ids.intersection(existing_ids)
+    to_delete = existing_ids - incoming_ids
+    sync_ids = to_add | to_update
+    chunks_to_sync = [chunk_by_id[chunk_id] for chunk_id in new_ids if chunk_id in sync_ids]
+    ids_to_sync = [chunk.id for chunk in chunks_to_sync]
     
     print("\n--- 📊 Sync Report ---")
     print(f"Total Source Chunks : {len(new_chunks)}")
@@ -71,14 +78,19 @@ def ingest_data():
     print(f"---------------------")
     print(f"🆕 To Add           : {len(to_add)}")
     print(f"🔄 To Update        : {len(to_update)}")
+    print(f"🗑️ To Delete        : {len(to_delete)}")
     print(f"---------------------\n")
 
-    if len(to_add) == 0 and len(to_update) == 0:
+    if len(to_add) == 0 and len(to_update) == 0 and len(to_delete) == 0:
         print("✅ Nothing to change. Database is already in sync.")
         return
 
     print("⚡ Syncing...")
-    vector_db.add_documents(documents=new_chunks, ids=new_ids)
+    if ids_to_sync:
+        vector_db.add_documents(documents=chunks_to_sync, ids=ids_to_sync)
+
+    if to_delete:
+        vector_db.delete(ids=list(to_delete))
 
     final_count = vector_db._collection.count()
     print(f"🎉 Done! Total documents in DB: {final_count}")

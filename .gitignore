@@ -24,3 +24,5 @@ to_ignore/
 .vscode/
 .idea/
 .DS_Store
+Gemini.md
+resume/
