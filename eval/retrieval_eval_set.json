@@ -1,0 +1,182 @@
+[
+  {
+    "id": "q001",
+    "question": "哪些领域里经常会观察到非随机的聚集分布？",
+    "expected_chunk_ids": ["memo_19_0"],
+    "expected_memo_ids": [19]
+  },
+  {
+    "id": "q002",
+    "question": "为什么要探索空间聚集现象背后的空间异质性来源？",
+    "expected_chunk_ids": ["memo_19_0"],
+    "expected_memo_ids": [19]
+  },
+  {
+    "id": "q003",
+    "question": "我最近对 uv 的使用有哪些困惑？",
+    "expected_chunk_ids": ["memo_18_0"],
+    "expected_memo_ids": [18]
+  },
+  {
+    "id": "q004",
+    "question": "我对 toml 和 lock 文件的认知不足主要体现在哪些方面？",
+    "expected_chunk_ids": ["memo_18_0"],
+    "expected_memo_ids": [18]
+  },
+  {
+    "id": "q005",
+    "question": "为什么我会了解到 CI/CD ？",
+    "expected_chunk_ids": ["memo_17_0"],
+    "expected_memo_ids": [17]
+  },
+  {
+    "id": "q006",
+    "question": "我在 12 月 31 号给项目加了什么 CI？它是用来做什么的？",
+    "expected_chunk_ids": ["memo_17_0"],
+    "expected_memo_ids": [17]
+  },
+  {
+    "id": "q007",
+    "question": "我对算法岗未来有什么担忧？",
+    "expected_chunk_ids": ["memo_16_0"],
+    "expected_memo_ids": [16]
+  },
+  {
+    "id": "q008",
+    "question": "在那段关系破裂中，谁承担了主要且根本的责任？",
+    "expected_chunk_ids": ["memo_15_0"],
+    "expected_memo_ids": [15]
+  },
+  {
+    "id": "q009",
+    "question": "A.R.T 最终被评价成一个什么样的人？",
+    "expected_chunk_ids": ["memo_14_0", "memo_14_1"],
+    "expected_memo_ids": [14]
+  },
+  {
+    "id": "q010",
+    "question": "A.R.T 的主要局限性有哪些？",
+    "expected_chunk_ids": ["memo_14_1"],
+    "expected_memo_ids": [14]
+  },
+  {
+    "id": "q011",
+    "question": "降A大调的核心特质是什么？",
+    "expected_chunk_ids": ["memo_14_2"],
+    "expected_memo_ids": [14]
+  },
+  {
+    "id": "q012",
+    "question": "降A大调有哪些根本缺陷与破坏性？",
+    "expected_chunk_ids": ["memo_14_3"],
+    "expected_memo_ids": [14]
+  },
+  {
+    "id": "q013",
+    "question": "最终对降A大调的总体评价是什么？",
+    "expected_chunk_ids": ["memo_14_4"],
+    "expected_memo_ids": [14]
+  },
+  {
+    "id": "q014",
+    "question": "我有没有写过一句英文短句，说那段有毒的关系已经结束了？",
+    "expected_chunk_ids": ["memo_13_0"],
+    "expected_memo_ids": [13]
+  },
+  {
+    "id": "q015",
+    "question": "A.R.T 的决定为什么被称作从试图修复到接受死亡的战略性撤退？",
+    "expected_chunk_ids": ["memo_12_0"],
+    "expected_memo_ids": [12]
+  },
+  {
+    "id": "q016",
+    "question": "A.R.T 的心路历程经历了哪几个阶段？",
+    "expected_chunk_ids": ["memo_12_0", "memo_12_1"],
+    "expected_memo_ids": [12]
+  },
+  {
+    "id": "q017",
+    "question": "为什么说开诚布公的电子邮件在这里是苍白的？",
+    "expected_chunk_ids": ["memo_12_2"],
+    "expected_memo_ids": [12]
+  },
+  {
+    "id": "q018",
+    "question": "让关系变成 a thing of the past 在这里是什么意思？",
+    "expected_chunk_ids": ["memo_12_3"],
+    "expected_memo_ids": [12]
+  },
+  {
+    "id": "q019",
+    "question": "为什么说 A.R.T 的撤退不是失败，而是一种成熟的胜利？",
+    "expected_chunk_ids": ["memo_12_4"],
+    "expected_memo_ids": [12]
+  },
+  {
+    "id": "q020",
+    "question": "哪句歌词提到了抬起头和眼泪自由？",
+    "expected_chunk_ids": ["memo_11_0"],
+    "expected_memo_ids": [11]
+  },
+  {
+    "id": "q021",
+    "question": "为什么说孤独是一种被进化出来的生物学本能？",
+    "expected_chunk_ids": ["memo_10_0"],
+    "expected_memo_ids": [10]
+  },
+  {
+    "id": "q022",
+    "question": "长期孤独对身体的危害被类比成什么？",
+    "expected_chunk_ids": ["memo_10_0"],
+    "expected_memo_ids": [10]
+  },
+  {
+    "id": "q023",
+    "question": "那条关于孤独的视频笔记，最后给了哪些脱困建议？",
+    "expected_chunk_ids": ["memo_10_1"],
+    "expected_memo_ids": [10]
+  },
+  {
+    "id": "q024",
+    "question": "滕飞跃现在怎么样了？",
+    "expected_chunk_ids": ["memo_9_0"],
+    "expected_memo_ids": [9]
+  },
+  {
+    "id": "q025",
+    "question": "Matsunaga Sara 来自哪部作品？",
+    "expected_chunk_ids": ["memo_8_0"],
+    "expected_memo_ids": [8]
+  },
+  {
+    "id": "q026",
+    "question": "git commit --amend 有哪些典型应用场景？",
+    "expected_chunk_ids": ["memo_7_0", "memo_7_1"],
+    "expected_memo_ids": [7]
+  },
+  {
+    "id": "q027",
+    "question": "为什么说 amend 的本质是创建一个新的提交，而不是给旧提交打补丁？",
+    "expected_chunk_ids": ["memo_7_2"],
+    "expected_memo_ids": [7]
+  },
+  {
+    "id": "q028",
+    "question": "为什么不要对已经 push 到远程仓库的提交使用 amend？",
+    "expected_chunk_ids": ["memo_7_2"],
+    "expected_memo_ids": [7]
+  },
+  {
+    "id": "q029",
+    "question": "什么事情浪费时间？",
+    "expected_chunk_ids": ["memo_4_0"],
+    "expected_memo_ids": [4]
+  },
+  {
+    "id": "q030",
+    "question": "为什么 time traveler 会进行时间旅行？",
+    "expected_chunk_ids": ["memo_3_0"],
+    "expected_memo_ids": [3]
+  }
+]
