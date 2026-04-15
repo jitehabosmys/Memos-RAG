@@ -1,6 +1,7 @@
 import sqlite3
 import re
 import os
+import hashlib
 from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Any
@@ -9,6 +10,12 @@ from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 DB_PATH = Path(os.getenv("MEMOS_DB_PATH", "data/memos.db"))
+
+
+def compute_content_hash(text: str) -> str:
+    """为 chunk 内容生成稳定 hash，用于真正的增量更新判断。"""
+    normalized = text.strip().encode("utf-8")
+    return hashlib.sha256(normalized).hexdigest()
 
 def clean_text(text: str) -> str:
     """
@@ -90,6 +97,7 @@ def process_documents(memos: List[Dict[str, Any]]) -> List[Document]:
             
             # 将 ID 同时写入 metadata (可选) 和 id 属性 (关键)
             chunk.metadata["chunk_id"] = stable_id
+            chunk.metadata["content_hash"] = compute_content_hash(chunk.page_content)
             chunk.id = stable_id 
             
             final_chunks.append(chunk)

@@ -11,6 +11,19 @@ from etl import DB_PATH, fetch_all_memos, process_documents
 PERSIST_DIRECTORY = os.getenv("CHROMA_DB_PATH", "./data/chroma_db")
 EMBEDDING_MODEL_NAME = "BAAI/bge-small-zh-v1.5"
 
+
+def get_existing_hashes(vector_db: Chroma) -> dict[str, str | None]:
+    """读取当前向量库中已有 chunk 的 content_hash。"""
+    existing_data = vector_db.get(include=["metadatas"])
+    ids = existing_data.get("ids", []) or []
+    metadatas = existing_data.get("metadatas", []) or []
+
+    existing_hashes = {}
+    for chunk_id, metadata in zip(ids, metadatas):
+        metadata = metadata or {}
+        existing_hashes[chunk_id] = metadata.get("content_hash")
+    return existing_hashes
+
 def ingest_data():
     print("🚀 Starting SMART ingestion pipeline...")
     
@@ -26,6 +39,10 @@ def ingest_data():
     new_chunks = process_documents(memos)
     new_ids = [chunk.id for chunk in new_chunks]
     chunk_by_id = {chunk.id: chunk for chunk in new_chunks}
+    incoming_hashes = {
+        chunk.id: chunk.metadata.get("content_hash")
+        for chunk in new_chunks
+    }
     
     # 2. 加载环境
     print(f"🧠 Loading embedding model...")
@@ -61,12 +78,18 @@ def ingest_data():
     )
 
     # 3. 计算差异 (Diff)
-    existing_data = vector_db.get() # 返回 {'ids': [...], 'embeddings': ..., 'documents': ...} 
-    existing_ids = set(existing_data['ids'])
+    existing_hashes = get_existing_hashes(vector_db)
+    existing_ids = set(existing_hashes)
     incoming_ids = set(new_ids)
 
     to_add = incoming_ids - existing_ids
-    to_update = incoming_ids.intersection(existing_ids)
+    overlapping_ids = incoming_ids.intersection(existing_ids)
+    to_update = {
+        chunk_id
+        for chunk_id in overlapping_ids
+        if existing_hashes.get(chunk_id) != incoming_hashes.get(chunk_id)
+    }
+    unchanged_ids = overlapping_ids - to_update
     to_delete = existing_ids - incoming_ids
     sync_ids = to_add | to_update
     chunks_to_sync = [chunk_by_id[chunk_id] for chunk_id in new_ids if chunk_id in sync_ids]
@@ -78,6 +101,7 @@ def ingest_data():
     print(f"---------------------")
     print(f"🆕 To Add           : {len(to_add)}")
     print(f"🔄 To Update        : {len(to_update)}")
+    print(f"⏭️ To Skip (Same)   : {len(unchanged_ids)}")
     print(f"🗑️ To Delete        : {len(to_delete)}")
     print(f"---------------------\n")
 

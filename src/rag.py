@@ -19,7 +19,7 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.runnables import RunnableLambda, RunnablePassthrough
+from langchain_core.runnables import RunnableBranch, RunnableLambda
 from sentence_transformers import CrossEncoder
 
 from etl import fetch_all_memos, process_documents
@@ -627,6 +627,11 @@ def decide_time_retrieval_strategy(question: str, search_query: str, time_intent
     ):
         return "semantic_first"
 
+    if time_intent.parser_source == "llm" and not time_intent.semantic_query:
+        if time_intent.retrieval_strategy in {"semantic_first", "metadata_first"}:
+            return time_intent.retrieval_strategy
+        return "metadata_first"
+
     semantic_basis = time_intent.semantic_query or search_query
     remainder = strip_generic_query_words(semantic_basis)
     if remainder:
@@ -1197,6 +1202,56 @@ def format_docs(docs):
         formatted.append(f"[日期: {date}]\n{content}")
     return "\n\n---\n\n".join(formatted)
 
+
+def build_retrieval_notes(retrieval_result: dict) -> str:
+    time_intent = retrieval_result.get("time_intent", {}) or {}
+    notes = []
+
+    retrieval_strategy = time_intent.get("retrieval_strategy")
+    sort_direction = time_intent.get("sort_direction")
+    start_date = time_intent.get("start_date")
+    end_date = time_intent.get("end_date")
+    search_query = retrieval_result.get("search_query")
+
+    if search_query:
+        notes.append(f"- 主题检索 query: {search_query}")
+
+    if start_date and end_date:
+        notes.append(f"- 已先按时间范围过滤候选: {start_date} ~ {end_date}")
+
+    if retrieval_strategy == "metadata_first":
+        notes.append("- 这是 metadata-first 查询，候选主要依据时间元数据筛选与排序，不依赖正文显式写出“第一条/最后一次”等字样。")
+    elif retrieval_strategy == "semantic_first":
+        notes.append("- 这是 semantic-first 查询，候选先按主题相关性召回。")
+
+    if sort_direction == "oldest":
+        notes.append("- 当前结果已按时间从早到晚排序，第一条就是满足“最早/第一条/第一次”条件的候选。")
+    elif sort_direction == "recent":
+        notes.append("- 当前结果已按时间从晚到早排序，第一条就是满足“最近一次/最后一次/最新”条件的候选。")
+
+    if time_intent.get("boost_recent"):
+        notes.append("- 检索阶段已对较新的记录做 recent boost，但并不是硬性时间截断。")
+
+    if not notes:
+        return "无额外检索说明。"
+    return "\n".join(notes)
+
+
+def format_retrieval_context(retrieval_result: dict) -> str:
+    docs = [doc for doc, _ in retrieval_result.get("reranked", [])]
+    notes = build_retrieval_notes(retrieval_result)
+    docs_text = format_docs(docs)
+    return f"【检索说明】\n{notes}\n\n【相关的笔记片段】\n{docs_text}"
+
+
+def build_empty_retrieval_response(retrieval_result: dict) -> str:
+    time_intent = retrieval_result.get("time_intent", {}) or {}
+    start_date = time_intent.get("start_date")
+    end_date = time_intent.get("end_date")
+    if start_date and end_date:
+        return f"我的记忆库里没有相关记录。当前时间过滤范围是 {start_date} ~ {end_date}。"
+    return "我的记忆库里没有相关记录。"
+
 def get_rag_chain():
     """初始化并返回 RAG 处理链"""
     print("🧠 Initializing Second Brain Core...")
@@ -1204,17 +1259,31 @@ def get_rag_chain():
 
     def hybrid_retrieve(query: str):
         if USE_QUERY_REWRITE:
-            retrieval_result = run_multi_query_retrieval(
+            return run_multi_query_retrieval(
                 query,
                 vector_db,
                 bm25_retriever,
                 reranker=reranker,
                 rewrite_chain=rewrite_chain,
             )
-            return [doc for doc, _ in retrieval_result["reranked"]]
 
-        retrieval_result = run_hybrid_retrieval(query, vector_db, bm25_retriever, reranker=reranker)
-        return [doc for doc, _ in retrieval_result["reranked"]]
+        return run_hybrid_retrieval(query, vector_db, bm25_retriever, reranker=reranker)
+
+    def prepare_answer_input(query: str):
+        retrieval_result = hybrid_retrieve(query)
+        docs = retrieval_result.get("reranked", [])
+        if not docs:
+            return {
+                "question": query,
+                "should_answer_directly": True,
+                "direct_answer": build_empty_retrieval_response(retrieval_result),
+            }
+
+        return {
+            "question": query,
+            "context": format_retrieval_context(retrieval_result),
+            "should_answer_directly": False,
+        }
 
     # 4. 初始化 LLM
     llm = create_chat_model(streaming=True, temperature=0.3)
@@ -1222,12 +1291,12 @@ def get_rag_chain():
     # 5. 定义 Prompt
     template = """你是一个基于我的 Memos 笔记构建的【个人第二大脑】。
     
-    请根据以下【相关的笔记片段】来回答我的问题。
+    请根据以下【检索说明】和【相关的笔记片段】来回答我的问题。
     如果笔记中没有相关内容，请诚实地告诉我“我的记忆库里没有相关记录”，不要编造。
+    如果【检索说明】已经明确指出这些片段经过了时间过滤或排序，请把这个检索结论当作可靠前提，不要要求正文必须显式写出“第一条”“最早”“最后一次”等字样。
     
     回答时请引用笔记中的日期，以证明你的来源。
     
-    【相关的笔记片段】:
     {context}
     
     【我的问题】: {question}
@@ -1239,10 +1308,14 @@ def get_rag_chain():
 
     # 6. 构建 RAG 链 (LCEL)
     rag_chain = (
-        {"context": RunnableLambda(hybrid_retrieve) | format_docs, "question": RunnablePassthrough()}
-        | prompt
-        | llm
-        | StrOutputParser()
+        RunnableLambda(prepare_answer_input)
+        | RunnableBranch(
+            (lambda x: x["should_answer_directly"], RunnableLambda(lambda x: x["direct_answer"])),
+            RunnableLambda(lambda x: {"context": x["context"], "question": x["question"]})
+            | prompt
+            | llm
+            | StrOutputParser(),
+        )
     )
     
     return rag_chain
