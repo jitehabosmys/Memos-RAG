@@ -70,6 +70,32 @@ def print_lines(title: str, lines: list[str]):
         print(f"{i}. {line}")
 
 
+def print_retrieval_metadata(title: str, result: dict):
+    print(f"\n=== {title} ===")
+    print(f"🔍 Retrieval Query: {result.get('search_query', '')}")
+
+    time_intent = result.get("time_intent", {})
+    if not time_intent.get("active"):
+        print("⏱️ Time Intent: none")
+        return
+
+    print(f"⏱️ Parser Source: {time_intent.get('parser_source')}")
+    print(f"⏱️ Retrieval Strategy: {time_intent.get('retrieval_strategy')}")
+    print(f"⏱️ Time Intent Reason: {time_intent.get('reason')}")
+    if time_intent.get("semantic_query"):
+        print(f"⏱️ LLM/Parsed Semantic Query: {time_intent.get('semantic_query')}")
+    print(f"⏱️ Matched Phrases: {', '.join(time_intent.get('matched_phrases', []))}")
+    if time_intent.get("has_hard_filter"):
+        print(
+            "⏱️ Time Filter: "
+            f"{time_intent.get('start_date')} ~ {time_intent.get('end_date')}"
+        )
+    if time_intent.get("boost_recent"):
+        print("⏱️ Recency Boost: enabled")
+    if time_intent.get("sort_direction"):
+        print(f"⏱️ Final Time Sort: {time_intent.get('sort_direction')}")
+
+
 def query_vector_db(question: str):
     print(f"🔎 Searching for: '{question}'...")
     
@@ -89,6 +115,7 @@ def query_vector_db(question: str):
         final_top_k=FINAL_TOP_K,
     )
 
+    print_retrieval_metadata("Single Query Retrieval Metadata", single_query_result)
     print_scored_results("Single Query Dense Retrieval (Chroma)", single_query_result["dense"])
     print_scored_results("Single Query BM25 Retrieval", single_query_result["bm25"])
     print_docs("Single Query Hybrid Retrieval (RRF Fusion)", single_query_result["fused"])
@@ -109,6 +136,7 @@ def query_vector_db(question: str):
             final_top_k=FINAL_TOP_K,
         )
 
+        print_retrieval_metadata("Multi-Query Retrieval Metadata", multi_query_result)
         print_lines("Generated Query Rewrites", multi_query_result["rewrites"])
         for entry in multi_query_result["by_query"]:
             print_docs(f"Per-Query Fused Results: {entry['query']}", entry["fused"])
