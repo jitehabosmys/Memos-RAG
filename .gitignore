@@ -9,8 +9,7 @@ __pycache__/
 *$py.class
 .venv/
 
-# === Data & Arti
-facts (Private) ===
+# === Data & Artifacts (Private) ===
 # 忽略整个 data 目录，因为它包含私人数据库 memos.db 和生成的向量库
 data/
 
